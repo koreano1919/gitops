@@ -7,4 +7,4 @@ resources:
 # Il tag qui lo aggiorna la PROMOZIONE (con approvazione), non ogni push.
 images:
   - name: ghcr.io/koreano1919/notes-api
-    newTag: latest
+    newTag: sha-b2cb8be
