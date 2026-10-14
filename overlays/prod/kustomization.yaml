@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: notes-prod
+resources:
+  - namespace.yaml
+  - ../../base
+# prod: 2 repliche dell'app (piu' vicino a un ambiente reale)
+replicas:
+  - name: notes-api
+    count: 2
+images:
+  - name: ghcr.io/koreano1919/notes-api
+    newTag: latest

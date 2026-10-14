@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: notes-staging
+resources:
+  - namespace.yaml
+  - ../../base
+# Il tag qui lo aggiorna la PROMOZIONE (con approvazione), non ogni push.
+images:
+  - name: ghcr.io/koreano1919/notes-api
+    newTag: latest

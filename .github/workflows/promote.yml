@@ -1,0 +1,75 @@
+name: promote
+# Promozione con approvazione via Pull Request.
+# dev si aggiorna da solo (CI del repo app). staging e prod si promuovono QUI:
+# il workflow apre una PR che cambia il tag; il MERGE della PR e' l'approvazione.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Ambiente di destinazione
+        type: choice
+        options: [staging, prod]
+        required: true
+      tag:
+        description: "Tag immagine (vuoto = prendi dal predecessore: dev->staging, staging->prod)"
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Calcola il tag da promuovere
+        id: src
+        run: |
+          TARGET="${{ inputs.target }}"
+          IN_TAG="${{ inputs.tag }}"
+          if [ -n "$IN_TAG" ]; then
+            TAG="$IN_TAG"
+          elif [ "$TARGET" = "staging" ]; then
+            TAG=$(grep 'newTag:' overlays/dev/kustomization.yaml | awk '{print $2}')
+          else
+            TAG=$(grep 'newTag:' overlays/staging/kustomization.yaml | awk '{print $2}')
+          fi
+          echo "Promuovo ${TARGET} al tag ${TAG}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Crea il branch con il nuovo tag
+        id: branch
+        run: |
+          TARGET="${{ inputs.target }}"
+          TAG="${{ steps.src.outputs.tag }}"
+          BRANCH="promote/${TARGET}-${TAG}"
+          CURRENT=$(grep 'newTag:' overlays/${TARGET}/kustomization.yaml | awk '{print $2}')
+          if [ "$CURRENT" = "$TAG" ]; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::${TARGET} e' gia' a ${TAG}, niente da promuovere"
+            exit 0
+          fi
+          git config user.name  "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          sed -i -E "s/(newTag: ).*/\1${TAG}/" overlays/${TARGET}/kustomization.yaml
+          git commit -am "promote ${TARGET} -> ${TAG}"
+          git push -u origin "$BRANCH" --force
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+      - name: Apri la Pull Request
+        if: steps.branch.outputs.already != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TARGET="${{ inputs.target }}"
+          TAG="${{ steps.src.outputs.tag }}"
+          gh pr create \
+            --base main \
+            --head "${{ steps.branch.outputs.branch }}" \
+            --title "Promote ${TARGET} -> ${TAG}" \
+            --body "Promozione di **notes-api** a \`${TAG}\` in **${TARGET}**.\n\nIl merge di questa PR applica il deploy (ArgoCD sincronizza l'overlay ${TARGET})." \
+            || gh pr edit "${{ steps.branch.outputs.branch }}" --title "Promote ${TARGET} -> ${TAG}"
