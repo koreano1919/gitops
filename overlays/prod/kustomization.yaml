@@ -10,4 +10,4 @@ replicas:
     count: 2
 images:
   - name: ghcr.io/koreano1919/notes-api
-    newTag: latest
+    newTag: sha-b2cb8be
