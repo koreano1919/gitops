@@ -8,4 +8,4 @@ resources:
 # Si parte da latest per il primo deploy; poi la CI passa a tag immutabili sha-<commit>.
 images:
   - name: ghcr.io/koreano1919/notes-api
-    newTag: latest
+    newTag: sha-b2cb8be
