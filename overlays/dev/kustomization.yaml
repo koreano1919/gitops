@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: notes-dev
+resources:
+  - namespace.yaml
+  - ../../base
+# Il tag dell'immagine lo aggiorna la CI del repo app (kustomize edit set image).
+# Si parte da latest per il primo deploy; poi la CI passa a tag immutabili sha-<commit>.
+images:
+  - name: ghcr.io/koreano1919/notes-api
+    newTag: latest

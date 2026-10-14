@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: notes-api-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/koreano1919/gitops.git
+    targetRevision: main
+    path: overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: notes-dev
+  syncPolicy:
+    automated:
+      prune: true        # rimuove risorse non piu' nel repo
+      selfHeal: true     # ripristina modifiche manuali (drift) -> utile in B6
+    syncOptions:
+      - CreateNamespace=true
