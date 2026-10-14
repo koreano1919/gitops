@@ -67,9 +67,10 @@ jobs:
         run: |
           TARGET="${{ inputs.target }}"
           TAG="${{ steps.src.outputs.tag }}"
+          BODY=$(printf 'Promozione di **notes-api** al tag `%s` in **%s**.\n\nIl merge di questa PR applica il deploy: ArgoCD sincronizza overlay %s.' "$TAG" "$TARGET" "$TARGET")
           gh pr create \
             --base main \
             --head "${{ steps.branch.outputs.branch }}" \
             --title "Promote ${TARGET} -> ${TAG}" \
-            --body "Promozione di **notes-api** a \`${TAG}\` in **${TARGET}**.\n\nIl merge di questa PR applica il deploy (ArgoCD sincronizza l'overlay ${TARGET})." \
-            || gh pr edit "${{ steps.branch.outputs.branch }}" --title "Promote ${TARGET} -> ${TAG}"
+            --body "$BODY" \
+            || gh pr edit "${{ steps.branch.outputs.branch }}" --title "Promote ${TARGET} -> ${TAG}" --body "$BODY"
